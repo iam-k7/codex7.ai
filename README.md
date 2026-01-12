@@ -1,43 +1,45 @@
-# codex7.ai — The Viral Shorts Engine 🚀
+# codex7.ai — The Viral Shorts Engine
 
 ![codex7.ai Banner](frontend/logo.png)
 
-> **"Turn raw video into viral gold in seconds."**
+> "Turn raw video into viral gold in seconds."
 
-**codex7.ai** is a production-grade AI SaaS platform engineered for content creators. It automates the complex workflow of captioning, styling, and formatting short-form content (YouTube Shorts, TikTok, Reels), delivering professional, high-engagement results with zero manual effort.
+codex7.ai is a production-grade AI SaaS platform engineered for content creators. It automates the complex workflow of captioning, styling, and formatting short-form content (YouTube Shorts, TikTok, Reels), delivering professional, high-engagement results with zero manual effort.
 
----
+* * *
 
-## 🌟 Why codex7?
+##  Why codex7?
 
 ### For Creators
-*   **Zero-Edit Workflow**: Upload a video, get a viral-ready result.
-*   **Locally Powered**: No recurring cloud API costs for transcription.
-*   **Brand Consistency**: Save your signature fonts, colors, and animation styles.
+
+* Zero-Edit Workflow: Upload a video, get a viral-ready result.
+* Locally Powered: No recurring cloud API costs for transcription.
+* Brand Consistency: Save your signature fonts, colors, and animation styles.
 
 ### For Developers & Investors
-*   **Architecture**: Built on a modern, decoupled **FastAPI** + **Vanilla JS** stack for maximum performance and easy scalability.
-*   **Cost Efficiency**: Utilizes efficient on-device inference (`faster-whisper`), drastically reducing operating costs compared to API-wrapper SaaS products.
-*   **Data Privacy**: Processing happens locally/on-server without sending audio to third-party black boxes.
 
----
+* Architecture: Built on a modern, decoupled FastAPI + Vanilla JS stack for maximum performance and easy scalability.
+* Cost Efficiency: Utilizes efficient on-device inference (`faster-whisper`), drastically reducing operating costs compared to API-wrapper SaaS products.
+* Data Privacy: Processing happens locally/on-server without sending audio to third-party black boxes.
+
+* * *
 
 ## ✨ Key Features
 
 | Feature | Description | Tech Stack |
-| :--- | :--- | :--- |
-| **🎙️ AI Transcription** | Ultra-accurate, offline speech-to-text with word-level timestamps. | `faster-whisper` (OpenAI Large-v3) |
-| **🌍 Smart Translation** | Auto-detects input language (Hindi, Tamil, Spanish) and translates to high-impact English. | `Transform Logic` |
-| **🎨 "Viral" Styling** | Dynamic rendering engine mimicking top creators (hormozi-style). | `CSS3 Glassmorphism` |
-| **⚡ Instant Render** | High-speed video processing and subtitle burning. | `FFmpeg`, `MoviePy` |
-| **📊 Analytics Engine** | Tracks user engagement, feature usage, and errors locally + Google Sheets. | `gspread`, `Pandas` |
-| **🛡️ Enterprise Ready** | Modular codebase, environment config, and robust error handling. | `Python 3.10+`, `DotEnv` |
+|---------|-------------|------------|
+| AI Transcription | Ultra-accurate, offline speech-to-text with word-level timestamps. | `faster-whisper` (OpenAI Large-v3) |
+| Smart Translation | Auto-detects input language (Hindi, Tamil, Spanish) and translates to high-impact English. | `Transform Logic` |
+| "Viral" Styling | Dynamic rendering engine mimicking top creators (hormozi-style). | `CSS3 Glassmorphism` |
+| ⚡ Instant Render | High-speed video processing and subtitle burning. | `FFmpeg`, `MoviePy` |
+| Analytics Engine | Tracks user engagement, feature usage, and errors locally + Google Sheets. | `gspread`, `Pandas` |
+| Enterprise Ready | Modular codebase, environment config, and robust error handling. | `Python 3.10+`, `DotEnv` |
 
----
+* * *
 
-## 🏗️ Architecture
+## 📊 Architecture
 
-The system follows a clean **Service-Oriented Architecture (SOA)**:
+The system follows a clean Service-Oriented Architecture (SOA):
 
 ```mermaid
 graph TD
