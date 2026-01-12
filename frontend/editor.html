@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>codex7.ai - AI Shorts Caption Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="editor-body">
+    <div id="drawer-overlay" class="drawer-overlay"></div>
+    <div id="particles-bg"></div>
+
+    <nav class="top-bar">
+        <div class="logo-container">
+            <img src="logo.png" alt="codex7.ai" class="brand-logo" style="height: 32px;">
+        </div>
+
+        <div class="mobile-page-title"
+            style="font-weight: 700; font-size: 1.1rem; font-family: 'Poppins'; position: absolute; left: 50%; transform: translateX(-50%); color: #1f2937;">
+            Editor</div>
+
+        <div class="user-profile" id="profile-trigger">
+            <!-- Panel Toggle for Mobile -->
+            <button id="mobile-panel-toggle" class="mobile-only-btn" style="margin-right: 12px; display: none;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="avatar" id="user-avatar">
+                <img id="avatar-img" src="" alt="Avatar" class="hidden">
+                <span id="avatar-initials">?</span>
+            </div>
+            <span id="user-display-name">Creator</span>
+            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+
+            <!-- Profile Dropdown -->
+            <div class="dropdown-menu" id="profile-dropdown">
+                <div class="dropdown-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>Profile</span>
+                </div>
+                <div class="dropdown-item">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
+                    </svg>
+                    <span>Settings</span>
+                </div>
+                <div style="height: 1px; background: #f3f4f6; margin: 4px 0;"></div>
+                <div class="dropdown-item logout" id="logout-trigger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    <span>Logout</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-layout">
+        <!-- Column 1: Left Sidebar -->
+        <aside class="sidebar">
+            <h3>Caption History</h3>
+            <div id="history-list" class="history-list">
+                <div class="empty-history">
+                    <img src="empty_history_illustration.png" alt="No History">
+                    <p>No captions generated yet</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Column 2: Center Preview -->
+        <main class="editor-main">
+            <div class="phone-frame">
+                <div class="video-container" id="video-preview-container">
+                    <div class="upload-placeholder" id="upload-zone"
+                        style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111; color: white; cursor: pointer;">
+                        <input type="file" id="video-upload" accept="video/*" hidden>
+                        <div style="font-size: 3rem; margin-bottom: 12px;">+</div>
+                        <p style="font-weight: 600;">Upload Video</p>
+                        <small style="opacity: 0.5;">Max 60 seconds</small>
+                    </div>
+                    <video id="main-video" loop hidden></video>
+                    <div id="caption-overlay" class="caption-overlay bottom hidden">
+                        <div id="caption-text-content" class="caption-word">SAMPLE CAPTION</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Floating Controls for Video -->
+            <div
+                style="position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; background: white; padding: 12px 24px; border-radius: 100px; box-shadow: var(--shadow-premium); z-index: 20;">
+                <button id="play-pause-btn"
+                    style="background: none; border: none; cursor: pointer; display: flex; align-items: center;">
+                    <svg id="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                    </svg>
+                    <svg id="pause-icon" class="hidden" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                    </svg>
+                </button>
+                <input type="range" id="video-timeline" style="width: 200px; accent-color: var(--primary-color);">
+                <span id="time-display" style="font-size: 0.85rem; font-weight: 600; font-family: 'Poppins';">00:00 /
+                    00:00</span>
+            </div>
+
+            <!-- Premium Control Bar -->
+            <div class="editor-top-controls"
+                style="position: absolute; top: 40px; right: 40px; display: flex; gap: 12px; align-items: center; z-index: 20;">
+                
+                <button id="generate-btn" class="magic-btn hidden">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path
+                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                        </path>
+                    </svg>
+                    <span>Generate Captions</span>
+                </button>
+            </div>
+
+            <div id="processing-status" class="hidden"
+                style="position: absolute; top: 40px; right: 40px; display: flex; align-items: center; gap: 10px; background: white; padding: 12px 24px; border-radius: 12px; box-shadow: var(--shadow-premium); z-index: 21;">
+                <div class="spinner"></div>
+                <span style="font-size: 0.9rem; font-weight: 600;">AI is crafting...</span>
+            </div>
+        </main>
+
+        <!-- Column 3: Right Control Panel -->
+        <aside class="caption-control-panel" id="control-panel">
+            <div class="panel-tabs">
+                <button class="tab-btn active" data-tab="transcript">Transcript</button>
+                <button class="tab-btn" data-tab="style">Style</button>
+                <button class="tab-btn" data-tab="export">Export</button>
+                <button id="close-panel-btn" class="mobile-only-btn"
+                    style="margin-left: auto; display: none; background: none; border: none; cursor: pointer; color: var(--text-sub);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- AI Assistant Message ('The Bot') -->
+            <div id="ai-message-container"
+                style="padding: 20px 24px; border-bottom: 1px solid var(--border-light); background: #FFF1F2; font-size: 0.85rem; color: #b91c1c; display: flex; align-items: flex-start; gap: 12px;">
+                <div style="font-size: 1.8rem; line-height: 1;">🤖</div>
+                <div id="ai-message" style="font-weight: 500; line-height: 1.5;">
+                    Welcome to <strong>codex7.ai</strong> — Hello, Creator! Ready to make your video viral? 🚀
+                </div>
+            </div>
+
+            <div id="transcript-tab" class="tab-content active">
+                <div id="transcript-list" class="transcript-list">
+                    <div class="empty-transcript-hint"
+                        style="text-align: center; padding: 40px 20px; color: var(--text-sub);">
+                        <div style="font-size: 2.5rem; margin-bottom: 16px;">🎬</div>
+                        <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 8px;">No Captions Yet</p>
+                        <p style="font-size: 0.8rem; margin-bottom: 24px; opacity: 0.7;">Upload a video and click
+                            Generate to see the magic happen.</p>
+                    </div>
+                    <!-- Populated via script: Segment Cards -->
+                </div>
+            </div>
+
+            <div id="style-tab" class="tab-content">
+                <div class="style-box">
+                    <!-- Presets removed as requested -->
+
+                    <div class="control-group">
+                        <label>Font Family</label>
+                        <select id="font-selector" class="secondary-btn" style="text-align: left;">
+                            <option value="'Bebas Neue', cursive">Bebas Neue (Viral)</option>
+                            <option value="'Poppins', sans-serif">Poppins Bold</option>
+                            <option value="'Inter', sans-serif">Inter Sans</option>
+                            <option value="'Montserrat', sans-serif">Montserrat Black</option>
+                            <option value="'Roboto', sans-serif">Roboto Medium</option>
+                            <option value="'Outfit', sans-serif">Outfit Extrabold</option>
+                            <option value="'Anton', sans-serif">Anton</option>
+                            <option value="'Kanit', sans-serif">Kanit Bold</option>
+                            <option value="'Oswald', sans-serif">Oswald</option>
+                            <option value="'Lexend', sans-serif">Lexend</option>
+                            <option value="'Permanent Marker', cursive">Permanent Marker</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Font Size</label>
+                        <input type="range" id="font-size-slider" min="20" max="80" value="48"
+                            style="width: 100%; accent-color: var(--primary-color);">
+                        <div id="font-size-value"
+                            style="text-align: right; font-size: 0.8rem; font-weight: 700; margin-top: 4px;">48px</div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Highlight Color</label>
+                        <div class="color-presets" style="flex-wrap: wrap; row-gap: 8px;">
+                            <div class="color-swatch active" style="background: #ffffff;" data-color="#ffffff"></div>
+                            <div class="color-swatch" style="background: #ffff00;" data-color="#ffff00"></div>
+                            <div class="color-swatch" style="background: #00ffff;" data-color="#00ffff"></div>
+                            <div class="color-swatch" style="background: #00ff00;" data-color="#00ff00"></div>
+                            <div class="color-swatch" style="background: #ff00ff;" data-color="#ff00ff"></div>
+                            <div class="color-swatch" style="background: #ff4d4f;" data-color="#ff4d4f"></div>
+                            <div class="color-swatch" style="background: #ffa500;" data-color="#ffa500"></div>
+                            <div class="color-swatch" style="background: #7cfc00;" data-color="#7cfc00"></div>
+                            <div class="color-swatch" style="background: #e63946;" data-color="#e63946"></div>
+                            <div class="color-swatch" style="background: #f1faee;" data-color="#f1faee"></div>
+                            <div class="color-swatch" style="background: #a8dadc;" data-color="#a8dadc"></div>
+                            <div class="color-swatch" style="background: #457b9d;" data-color="#457b9d"></div>
+                            <div class="color-swatch" style="background: #1d3557;" data-color="#1d3557"></div>
+                            <input type="color" id="color-picker" hidden>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Animation</label>
+                        <select id="animation-selector" class="secondary-btn" style="text-align: left;">
+                            <option value="pop">Viral Pop</option>
+                            <option value="bounce">Bounce</option>
+                            <option value="fade">Fade</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Position</label>
+                        <div class="position-grid">
+                            <button class="pos-btn" data-pos="top">Top</button>
+                            <button class="pos-btn" data-pos="center">Center</button>
+                            <button class="pos-btn active" data-pos="bottom">Bottom</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="export-tab" class="tab-content">
+                <div class="style-box">
+                    <div class="control-group">
+                        <label>Resolution</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button class="secondary-btn res-btn active" data-res="1080p">1080p (HQ)</button>
+                            <button class="secondary-btn res-btn" data-res="4K">4K (Ultra)</button>
+                        </div>
+                    </div>
+                    <button id="export-video-btn" class="primary-btn">Export Video</button>
+                    <button id="download-transcript-btn" class="secondary-btn" style="border-style: dashed;">Download
+                        Transcript (.txt)</button>
+                </div>
+            </div>
+
+            <div class="panel-footer" style="flex-direction: column; gap: 8px;">
+                <button id="save-history-btn" class="secondary-btn" style="width: 100%;">Save Project</button>
+                <button id="open-feedback-btn" class="secondary-btn"
+                    style="width: 100%; border-style: dotted; font-size: 0.8rem; padding: 8px;">
+                    💡 Share Feedback
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="modal hidden"
+        style="position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+        <div class="modal-content"
+            style="background: white; padding: 32px; border-radius: 20px; max-width: 450px; width: 90%; box-shadow: var(--shadow-premium); position: relative;">
+            <button id="close-feedback"
+                style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">&times;</button>
+
+            <h2 style="margin-bottom: 8px;">How are we doing?</h2>
+            <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 24px;">Your feedback helps us train our
+                AI to be better for everyone.</p>
+
+            <form id="feedback-form">
+                <div class="control-group">
+                    <label>Rating</label>
+                    <div class="star-rating"
+                        style="display: flex; gap: 8px; font-size: 2rem; color: #fbbf24; cursor: pointer; margin-bottom: 16px;">
+                        <span data-star="1">☆</span><span data-star="2">☆</span><span data-star="3">☆</span><span
+                            data-star="4">☆</span><span data-star="5">☆</span>
+                    </div>
+                    <input type="hidden" id="rating-value" value="0" required>
+                </div>
+
+                <div class="control-group">
+                    <label>Message</label>
+                    <textarea id="feedback-msg" class="secondary-btn"
+                        style="width: 100%; height: 100px; text-align: left; padding: 12px; font-weight: 400; margin-bottom: 16px;"
+                        placeholder="What did you like or dislike?"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px;">
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <label>Language Preference</label>
+                        <select id="fb-lang" class="secondary-btn" style="font-size: 0.8rem; padding: 8px;">
+                            <option value="en">English</option>
+                            <option value="ta">Tamil</option>
+                            <option value="hi">Hindi</option>
+                        </select>
+                    </div>
+                    <div class="control-group" style="margin-bottom: 0;">
+                        <label>Feature Request?</label>
+                        <input type="text" id="fb-feature" class="secondary-btn" placeholder="Extra feature..."
+                            style="font-size: 0.8rem; padding: 8px;">
+                    </div>
+                </div>
+
+                <button type="submit" class="primary-btn">Submit Feedback</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

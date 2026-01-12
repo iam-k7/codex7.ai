@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>codex7.ai - AI Shorts Caption Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="particles-bg"></div>
+    <div id="login-container">
+        <main class="login-card">
+            <img src="logo.png" alt="codex7.ai" class="brand-logo">
+            <h1>Welcome to the Future of Captions</h1>
+            <p class="subtitle">Generate viral, high-engagement captions for YouTube Shorts and Reels in seconds using
+                AI.</p>
+
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" placeholder="eg. John Doe" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Gmail Address</label>
+                    <input type="email" id="email" placeholder="eg. creator@gmail.com" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="country">Country</label>
+                    <select id="country" required>
+                        <option value="" disabled selected>Select your country</option>
+                    </select>
+                </div>
+
+                <div class="input-group" style="display: flex; align-items: flex-start; gap: 10px; margin-top: 10px;">
+                    <input type="checkbox" id="privacy-consent" style="width: auto; margin-top: 4px;" required>
+                    <label for="privacy-consent" style="font-size: 0.75rem; color: var(--text-sub); font-weight: 500;">
+                        I agree to the <a href="#" style="color: var(--primary-color);">Privacy Policy</a> and
+                        understand that non-personal usage data is tracked to improve AI quality.
+                    </label>
+                </div>
+
+                <button type="submit" class="primary-btn">
+                    <span>Use Free</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                        <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                </button>
+            </form>
+
+            <footer class="login-footer">
+                Built by Kesavan
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

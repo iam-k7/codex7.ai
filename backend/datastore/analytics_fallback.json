@@ -1,0 +1,10 @@
+[
+    {
+        "timestamp": "2026-01-12T23:51:21.771122",
+        "event_type": "CAPTION_GENERATE",
+        "user_id": "gamingkesavan@gmail.com",
+        "user_query": "Screen Recording 2026-01-07 142334.mp4",
+        "detected_language": "en (1.00)",
+        "error_log": "success"
+    }
+]

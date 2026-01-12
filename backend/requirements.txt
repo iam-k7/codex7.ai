@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-multipart
+faster-whisper
+gspread
+oauth2client
+moviepy
+python-dotenv
+pandas
+static-ffmpeg
