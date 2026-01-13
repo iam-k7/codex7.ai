@@ -1,8 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
-    const API_BASE_URL = window.location.origin === 'null' || window.location.port !== '8000'
-        ? 'http://localhost:8000'
-        : '';
+    const API_BASE_URL =
+        window.location.hostname === 'localhost'
+            ? 'http://localhost:8000'
+            : '';
 
     initParticles();
 
@@ -102,12 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEditorPage = !!document.querySelector('.editor-body');
 
     if (isLoginPage && userEmail) {
-        window.location.href = 'editor.html';
+        window.location.href = '/editor';
         return;
     }
 
     if (isEditorPage && !userEmail) {
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return;
     }
 
