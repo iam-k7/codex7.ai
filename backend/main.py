@@ -1,53 +1,62 @@
 import os
 import uuid
-import datetime
 import json
+import datetime
 from pathlib import Path
 from typing import Optional
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import uvicorn
 
-# AI and Analytics Services
-from backend.ai_service import generate_ai_captions, export_video_render
-from backend.sheets_service import SheetsDB, JSONDB
-from backend.services.analytics import analytics
-from fastapi.responses import FileResponse, StreamingResponse
-
-
-#connecting fronted--------------------------
-from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pathlib import Path
-
-app = FastAPI()
-
+# --- Load environment ---
 BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR / "backend" / ".env"
+load_dotenv(ENV_PATH if ENV_PATH.exists() else None)
 
-# Serve static assets
+# --- Create FastAPI app ONCE ---
+app = FastAPI(title="codex7.ai")
+
+# --- Serve Frontend ---
+FRONTEND_DIR = BASE_DIR / "frontend"
+
 app.mount(
     "/static",
-    StaticFiles(directory=BASE_DIR / "frontend"),
+    StaticFiles(directory=FRONTEND_DIR),
     name="static"
 )
 
-# Serve homepage
 @app.get("/")
 def root():
-    return FileResponse(BASE_DIR / "frontend" / "index.html")  #----------------------------
+    return FileResponse(FRONTEND_DIR / "index.html")
 
+# --- CORS ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# --- Environment Setup ---
-_backend_dir = Path(__file__).resolve().parent
-_env_path = _backend_dir / ".env"
-load_dotenv(_env_path if _env_path.exists() else None)
+# --- Internal services ---
+from backend.ai_service import generate_ai_captions, export_video_render
+from backend.sheets_service import SheetsDB, JSONDB
+from backend.services.analytics import analytics
 
-app = FastAPI(title="codex7.ai API")
+# --- Databases ---
+db = SheetsDB()
+local_db = JSONDB()
 
 # --- Models ---
+class UserLogin(BaseModel):
+    name: str
+    email: str
+    country: str
+
 class UserFeedback(BaseModel):
     user_id: str
     email: Optional[str] = ""
@@ -56,149 +65,59 @@ class UserFeedback(BaseModel):
     feature: Optional[str] = "Editor"
     language_pref: Optional[str] = "en"
 
-class UserLogin(BaseModel):
-    name: str
-    email: str
-    country: str
-
-# --- Middleware ---
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# --- Database Instances ---
-db = SheetsDB()
-local_db = JSONDB()
-
-# --- Endpoints ---
+# ---------------- API ROUTES ----------------
 
 @app.post("/api/login")
 async def login(user: UserLogin):
-    """Handles user authentication and data sync"""
-    # 1. Local JSON Storage (Source of Truth)
-    user_result = local_db.store_user({
+    user_result = local_db.store_user(user.dict())
+    if not user_result:
+        raise HTTPException(status_code=500, detail="Local DB error")
+
+    user_id = user_result["user_id"]
+
+    db.store_user({
+        "user_id": user_id,
         "name": user.name,
         "email": user.email,
         "country": user.country
     })
-    
-    if not user_result:
-        raise HTTPException(status_code=500, detail="Local Database Error")
-        
-    user_id = user_result["user_id"]
-    action = user_result["action"]
 
-    # 2. Sync to Google Sheets
-    sheet_action = db.store_user({
-        "name": user.name,
-        "email": user.email,
-        "country": user.country,
-        "user_id": user_id
-    })
-    
-    return {
-        "status": "success", 
-        "user_id": user_id, 
-        "action": action, 
-        "sheet_action": sheet_action
-    }
+    return {"status": "success", "user_id": user_id}
 
 @app.post("/api/feedback")
 async def submit_feedback(fb: UserFeedback):
-    """Stores user feedback in both local and cloud databases"""
-    # Log to Analytics
-    await analytics.log_event("USER_FEEDBACK", {
-        "user_id": fb.user_id,
-        "rating": str(fb.rating),
-        "feedback_message": fb.message
-    })
-    
-    # Store in Google Sheets
-    db.store_feedback({
-        "user_id": fb.user_id, 
-        "rating": fb.rating,
-        "message": fb.message,
-        "feature": fb.feature,
-        "language": fb.language_pref,
-        "email": fb.email or fb.user_id 
-    })
-
-    # Store in Local JSON DB
+    await analytics.log_event("USER_FEEDBACK", fb.dict())
+    db.store_feedback(fb.dict())
     local_db.store_feedback(fb.dict())
-
-    return {"status": "success", "message": "Feedback received. Thank you!"}
+    return {"status": "success"}
 
 @app.post("/api/generate-captions")
-async def process_video(
+async def generate(
     video: UploadFile = File(...),
     email: str = Form(...),
     language: str = Form("en")
 ):
-    """Processes uploaded video for AI captions"""
-    MAX_SIZE = 50 * 1024 * 1024
+    temp_file = f"temp_{uuid.uuid4()}_{video.filename}"
     content = await video.read()
-    if len(content) > MAX_SIZE:
-        raise HTTPException(status_code=413, detail="File too large. Max 50MB allowed.")
-    await video.seek(0)
 
-    temp_path = f"temp_{uuid.uuid4()}_{video.filename}"
-    with open(temp_path, "wb") as f:
+    with open(temp_file, "wb") as f:
         f.write(content)
-    
+
     try:
-        result = await generate_ai_captions(temp_path, language)
-        
-        await analytics.log_event("CAPTION_GENERATE", {
-            "user_id": email,
-            "user_query": video.filename,
-            "detected_language": f"{result.get('language', 'unknown')} ({result.get('language_probability', 0):.2f})",
-            "error_log": result.get("status")
-        })
-        
-        os.remove(temp_path)
+        result = await generate_ai_captions(temp_file, language)
+        os.remove(temp_file)
         return result
     except Exception as e:
-        if os.path.exists(temp_path): os.remove(temp_path)
-        await analytics.log_event("CAPTION_FAILURE", {"user_id": email, "error_log": str(e)})
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/history")
-async def get_history(email: str):
-    """Returns user project history"""
+async def history(email: str):
     user = db.get_user_by_email(email)
-    if not user: return []
+    if not user:
+        return []
     return local_db.get_user_history(user["user_id"])
-
-@app.post("/api/save-history")
-async def save_history(
-    email: str = Form(...),
-    video_name: str = Form(...),
-    caption_text: str = Form(...),
-    font: str = Form(...),
-    size: str = Form(...),
-    color: str = Form(...),
-    position: str = Form(...)
-):
-    """Saves captioned project data"""
-    user = db.get_user_by_email(email)
-    if not user: raise HTTPException(status_code=404, detail="User not found")
-        
-    history_data = {
-        "user_id": user["user_id"],
-        "email": email,
-        "video_name": video_name,
-        "caption_text": caption_text,
-        "font": font,
-        "size": size,
-        "color": color,
-        "position": position,
-        "timestamp": datetime.datetime.now().isoformat()
-    }
-    local_db.save_history(history_data)
-    return {"status": "success"}
 
 @app.post("/api/export-video")
 async def export_video(
@@ -207,37 +126,25 @@ async def export_video(
     segments: str = Form(...),
     styles: str = Form(...)
 ):
-    """Renders final video with burned-in captions"""
-    temp_in = f"export_in_{uuid.uuid4()}.mp4"
-    try:
-        content = await video.read()
-        with open(temp_in, "wb") as f:
-            f.write(content)
-            
-        segments_list = json.loads(segments)
-        styles_dict = json.loads(styles)
-        
-        output_path = await export_video_render(temp_in, segments_list, styles_dict)
-        
-        if not output_path or not os.path.exists(output_path):
-            raise HTTPException(status_code=500, detail="Rendering failed")
+    temp_in = f"export_{uuid.uuid4()}.mp4"
+    content = await video.read()
 
-        def cleanup_files(path1, path2):
-            try:
-                for p in [path1, path2]:
-                    if p and os.path.exists(p): os.remove(p)
-            except: pass
+    with open(temp_in, "wb") as f:
+        f.write(content)
 
-        background_tasks.add_task(cleanup_files, temp_in, output_path)
+    segments_list = json.loads(segments)
+    styles_dict = json.loads(styles)
 
-        return FileResponse(
-            path=output_path,
-            filename=f"codex7_viral_export.mp4",
-            media_type='video/mp4'
-        )
-    except Exception as e:
-        if os.path.exists(temp_in): os.remove(temp_in)
-        raise HTTPException(status_code=500, detail=str(e))
+    output = await export_video_render(temp_in, segments_list, styles_dict)
 
+    background_tasks.add_task(os.remove, temp_in)
+
+    return FileResponse(
+        output,
+        media_type="video/mp4",
+        filename="codex7_export.mp4"
+    )
+
+# --- Local run only ---
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
