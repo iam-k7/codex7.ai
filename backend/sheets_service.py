@@ -2,67 +2,87 @@ import os
 import json
 import gspread
 import datetime
-from oauth2client.service_account import ServiceAccountCredentials
 from pathlib import Path
+from dotenv import load_dotenv
+from oauth2client.service_account import ServiceAccountCredentials
 
+# --- Environment Configuration ---
+_backend_dir = Path(__file__).resolve().parent
+_env_locations = [
+    _backend_dir / ".env",          # Preferred: backend folder
+    _backend_dir.parent / ".env"   # Fallback: project root
+]
+
+_env_loaded = False
+for loc in _env_locations:
+    if loc.exists():
+        load_dotenv(loc, override=True)
+        _env_loaded = True
+        break
+
+# ===================== GOOGLE SHEETS DB =====================
 
 class SheetsDB:
     def __init__(self):
-        # Modern & correct scopes
         self.scope = [
             "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
         ]
 
-        # credentials.json must be inside backend/
-        self.creds_path = os.path.join(os.path.dirname(__file__), "credentials.json")
+        # Use absolute path for credentials
+        self.creds_path = _backend_dir / "credentials.json"
 
         self.client = None
         self.spreadsheet = None
-        self.SHEET_NAME = "codex7.ai"
+        self.user_sheet = None
+        self.feedback_sheet = None
+        self._connected = False
 
-        # Connect on init
         self._connect()
 
     def _connect(self):
+        """Standardized connection logic with graceful fallback"""
         try:
-            if not os.path.exists(self.creds_path):
-                print(f"credentials.json not found at {self.creds_path}")
-                return
+            if not self.creds_path.exists():
+                raise FileNotFoundError(f"Credentials not found at {self.creds_path}")
 
-            self.creds = ServiceAccountCredentials.from_json_keyfile_name(
-                self.creds_path, self.scope
+            creds = ServiceAccountCredentials.from_json_keyfile_name(
+                str(self.creds_path), self.scope
             )
-            self.client = gspread.authorize(self.creds)
+            self.client = gspread.authorize(creds)
 
-            # Open by Sheet ID (reliable)
-            SHEET_ID = os.getenv("GOOGLE_SHEET_ID", "18HDgCWNHOE1T24OZlIhY86kgymkicxa9tFU5rhpaOzo") # Fallback to default if not set
-            if not SHEET_ID or "your_" in SHEET_ID:
-                 print("WARNING: GOOGLE_SHEET_ID not set correctly in .env. Sheets integration may fail.")
-            
-            self.spreadsheet = self.client.open_by_key(SHEET_ID)
+            sheet_id = os.getenv("GOOGLE_SHEET_ID")
+            if not sheet_id:
+                raise ValueError("GOOGLE_SHEET_ID not set in environment.")
 
+            self.spreadsheet = self.client.open_by_key(sheet_id)
             self._ensure_sheets_exist()
-            print("Successfully connected to Google Sheets")
-
+            self._connected = True
+            print(f"Connected to Google Sheets: {self.spreadsheet.title}")
+            
         except Exception as e:
-            print(f"Google Sheets Connection Error: {e}")
+            self._connected = False
+            print(f"Google Sheets connection failed: {e}")
+            print("Falling back to local storage only.")
+
+    def is_connected(self):
+        return self._connected and self.spreadsheet is not None
 
     def _ensure_sheets_exist(self):
+        """Creates worksheets if they don't exist"""
         if not self.spreadsheet:
             return
 
-        # ---------- User_Data ----------
+        # --- User_Data ---
         try:
             self.user_sheet = self.spreadsheet.worksheet("User_Data")
         except gspread.WorksheetNotFound:
             self.user_sheet = self.spreadsheet.add_worksheet(
                 title="User_Data", rows=1000, cols=10
             )
-            self.user_sheet.append_row(["Name", "Email", "Country", "Timestamp"])
-            self.user_sheet.format("A1:D1", {"textFormat": {"bold": True}})
+            self.user_sheet.append_row(["User ID", "Name", "Email", "Country", "Timestamp"])
 
-        # ---------- User_Feedback ----------
+        # --- User_Feedback ---
         try:
             self.feedback_sheet = self.spreadsheet.worksheet("User_Feedback")
         except gspread.WorksheetNotFound:
@@ -70,202 +90,154 @@ class SheetsDB:
                 title="User_Feedback", rows=1000, cols=10
             )
             self.feedback_sheet.append_row(
-                [
-                    "Name",
-                    "Email",
-                    "Rating",
-                    "Feedback",
-                    "Feature",
-                    "Language",
-                    "Timestamp",
-                ]
+                ["User ID", "Email", "Rating", "Feedback", "Feature", "Language", "Timestamp"]
             )
-            self.feedback_sheet.format("A1:G1", {"textFormat": {"bold": True}})
 
+    # ---------------- USERS ----------------
     def store_user(self, user_data):
-        if not self.client or not self.spreadsheet:
-            print("No DB connection, skipping save.")
+        """Updates or creates a user row in Google Sheets"""
+        if not self.is_connected():
             return False
 
         try:
             email = user_data.get("email")
-            if not email:
-                print("Email missing, skipping user")
-                return False
+            if not email: return False
 
             name = user_data.get("name", "")
             country = user_data.get("country", "")
-            timestamp = datetime.datetime.now().isoformat()
+            user_id = user_data.get("user_id", "")
+            timestamp = user_data.get("created_at") or datetime.datetime.now().isoformat()
 
-            try:
-                # Try to find existing user
-                cell = self.user_sheet.find(email)
+            # Search only in email column (Column C)
+            emails = self.user_sheet.col_values(3)
 
-                # Update row
+            if email in emails:
+                row = emails.index(email) + 1
                 self.user_sheet.update(
-                    f"A{cell.row}:D{cell.row}",
-                    [[name, email, country, timestamp]],
+                    f"A{row}:E{row}",
+                    [[user_id, name, email, country, timestamp]]
                 )
-
-                print(f"Updated user: {email}")
+                print(f"Updated user in sheet: {email}")
                 return "updated"
-
-            except Exception:
-                # Not found → append
-                self.user_sheet.append_row([name, email, country, timestamp])
-
-                print(f"Created user: {email}")
+            else:
+                self.user_sheet.append_row([user_id, name, email, country, timestamp])
+                print(f"Created new user in sheet: {email}")
                 return "created"
-
+                
         except Exception as e:
-            print(f"Error storing user: {e}")
+            print(f"Error storing user to Sheets: {e}")
             return False
 
+    # ---------------- FEEDBACK ----------------
     def store_feedback(self, feedback_data):
-        if not self.client or not self.spreadsheet:
+        """Appends a feedback entry to Google Sheets"""
+        if not self.is_connected():
             return False
 
         try:
             timestamp = datetime.datetime.now().isoformat()
-
-            self.feedback_sheet.append_row(
-                [
-                    feedback_data.get("user_id", "Anonymous"),
-                    feedback_data.get("email", ""),
-                    feedback_data.get("rating"),
-                    feedback_data.get("message"),
-                    feedback_data.get("feature", ""),
-                    feedback_data.get("language", "en"),
-                    timestamp,
-                ]
-            )
-
+            self.feedback_sheet.append_row([
+                feedback_data.get("user_id", "Anonymous"),
+                feedback_data.get("email", ""),
+                feedback_data.get("rating"),
+                feedback_data.get("message"),
+                feedback_data.get("feature", ""),
+                feedback_data.get("language", "en"),
+                timestamp
+            ])
+            print(f"Feedback stored for {feedback_data.get('email', 'Anonymous')}")
             return True
-
         except Exception as e:
             print(f"Error storing feedback: {e}")
             return False
 
-    # ---------- Optional helpers ----------
-
     def get_user_by_email(self, email):
-        if not self.spreadsheet:
-            return None
-
+        """Helper for main app lookup"""
+        if not self.is_connected(): return None
         try:
-            cell = self.user_sheet.find(email)
-            row = self.user_sheet.row_values(cell.row)
-
-            return {
-                "name": row[0],
-                "email": row[1],
-                "country": row[2],
-                "user_id": row[1],
-            }
-
+            emails = self.user_sheet.col_values(3)
+            if email in emails:
+                row_idx = emails.index(email) + 1
+                row = self.user_sheet.row_values(row_idx)
+                if len(row) >= 3:
+                    return {
+                        "user_id": row[0],
+                        "name": row[1],
+                        "email": row[2],
+                        "country": row[3] if len(row) > 3 else "",
+                    }
+            return None
         except Exception:
             return None
 
-    def add_user(self, user_data):
-        self.store_user(user_data)
 
-    def get_user_history(self, user_id):
-        return []
-
+# ===================== LOCAL JSON DB =====================
 
 class JSONDB:
     def __init__(self):
-        self.base_dir = Path(__file__).resolve().parent.parent
-        self.db_path = self.base_dir / "datastore" / "mock_db.json"
-        
-        # Ensure dir exists (file is created by cleanup/init usually, but good to have check)
-        if not self.db_path.parent.exists():
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self.db_path = _backend_dir.parent / "datastore" / "mock_db.json"
+        # Accessing datastore outside backend folder for security
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def _read_db(self):
+    def _read(self):
+        if not self.db_path.exists():
+            return {"users": [], "feedbacks": [], "history": []}
         try:
-            if not self.db_path.exists():
-                return {"users": [], "feedbacks": [], "history": []}
             with open(self.db_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                # Ensure all keys exist
-                changed = False
-                for key in ["users", "feedbacks", "history"]:
-                    if key not in data:
-                        data[key] = []
-                        changed = True
-                if changed:
-                    self._write_db(data)
-                return data
-        except (json.JSONDecodeError, ValueError) as e:
-            print(f"Error reading JSON DB (corrupt?), resetting: {e}")
-            empty_db = {"users": [], "feedbacks": [], "history": []}
-            self._write_db(empty_db)
-            return empty_db
-        except Exception as e:
-            print(f"Error reading JSON DB: {e}")
+                return json.load(f)
+        except Exception:
             return {"users": [], "feedbacks": [], "history": []}
 
-    def _write_db(self, data):
-        try:
-            with open(self.db_path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=4)
-            return True
-        except Exception as e:
-            print(f"Error writing to JSON DB: {e}")
-            return False
-
     def store_user(self, user_data):
-        data = self._read_db()
+        data = self._read()
         email = user_data.get("email")
-        if not email:
-            return False
+        if not email: return None
 
-        existing_user = next((u for u in data["users"] if u.get("gmail") == email), None)
-        
-        timestamp = datetime.datetime.now().isoformat()
-        new_user = {
-            "user_id": user_data.get("user_id", str(os.urandom(8).hex())),
+        # Check for existing user
+        for u in data["users"]:
+            if u.get("email", u.get("gmail")) == email:
+                u.update({
+                    "name": user_data.get("name"),
+                    "country": user_data.get("country"),
+                    "email": email
+                })
+                self._write(data)
+                return {"action": "updated", "user_id": u["user_id"]}
+
+        # New user
+        user_id = str(len(data["users"]) + 1001)
+        data["users"].append({
+            "user_id": user_id,
             "name": user_data.get("name"),
-            "gmail": email,
+            "email": email,
             "country": user_data.get("country"),
-            "created_at": timestamp
-        }
-
-        if existing_user:
-            # Update existing
-            for i, u in enumerate(data["users"]):
-                if u.get("gmail") == email:
-                    data["users"][i].update(new_user)
-                    break
-            action = "updated"
-        else:
-            data["users"].append(new_user)
-            action = "created"
-        
-        self._write_db(data)
-        return action
+            "created_at": datetime.datetime.now().isoformat()
+        })
+        self._write(data)
+        return {"action": "created", "user_id": user_id}
 
     def store_feedback(self, feedback_data):
-        data = self._read_db()
-        timestamp = datetime.datetime.now().isoformat()
-        new_feedback = {
-            "email": feedback_data.get("user_id", "anonymous"),
-            "gmail": feedback_data.get("email", feedback_data.get("user_id")),
-            "rating": feedback_data.get("rating"),
-            "message": feedback_data.get("message"),
-            "feature": feedback_data.get("feature", "Editor"),
-            "language": feedback_data.get("language_pref", feedback_data.get("language", "en")),
-            "timestamp": timestamp
-        }
-        data["feedbacks"].append(new_feedback)
-        return self._write_db(data)
+        data = self._read()
+        data["feedbacks"].append({
+            **feedback_data,
+            "timestamp": datetime.datetime.now().isoformat()
+        })
+        return self._write(data)
 
     def save_history(self, history_data):
-        data = self._read_db()
+        data = self._read()
+        data["history"] = data.get("history", [])
         data["history"].append(history_data)
-        return self._write_db(data)
+        return self._write(data)
 
-    def get_user_history(self, user_id_or_email):
-        data = self._read_db()
-        return [h for h in data["history"] if h.get("user_id") == user_id_or_email or h.get("email") == user_id_or_email]
+    def get_user_history(self, user_id):
+        data = self._read()
+        return [h for h in data.get("history", []) if h.get("user_id") == user_id]
+
+    def _write(self, data):
+        try:
+            with open(self.db_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+            return True
+        except Exception:
+            return False

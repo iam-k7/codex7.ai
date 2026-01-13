@@ -1,47 +1,42 @@
-import json
-import datetime
 from sheets_service import SheetsDB, JSONDB
-from pathlib import Path
-
-BASE_DIR = Path(__file__).resolve().parent.parent
-# JSON_DB_PATH not needed if using JSONDB class
 
 def sync_json_to_google_sheet():
-    db = SheetsDB()
-    local_db = JSONDB()
+    """Manual trigger to sync local data to Google Sheets"""
+    sheets = SheetsDB()
+    local = JSONDB()
 
-    if not db.spreadsheet:
-        print("Google Sheet not connected")
+    if not sheets.is_connected():
+        print("❌ Google Sheets connection required for sync.")
         return
 
-    data = local_db._read_db()
+    data = local._read()
 
-    # ---------------- USERS ----------------
-    users = data.get("users", [])
-    for user in users:
-        result = db.store_user({
-            "name": user.get("name"),
+    # -------- Sync Users --------
+    for user in data.get("users", []):
+        email = user.get("email", user.get("gmail"))
+        result = sheets.store_user({
             "user_id": user.get("user_id"),
-            "email": user.get("gmail"),
+            "name": user.get("name"),
+            "email": email,
             "country": user.get("country"),
-            "created_at": user.get("created_at")
+            "created_at": user.get("created_at"),
         })
-        print(f"User {user.get('gmail')} → {result}")
+        print(f"User {email} → {result}")
 
-    # ---------------- FEEDBACK ----------------
-    feedbacks = data.get("feedbacks", [])
-    for fb in feedbacks:
-        db.store_feedback({
-            "user_id": fb.get("email"),
-            "email": fb.get("gmail"),
+    # -------- Sync Feedback --------
+    for fb in data.get("feedbacks", []):
+        email = fb.get("email", fb.get("gmail"))
+        sheets.store_feedback({
+            "user_id": fb.get("user_id", ""),
+            "email": email,
             "rating": fb.get("rating"),
             "message": fb.get("message"),
-            "feature": fb.get("feature"),
-            "language": fb.get("language")
+            "feature": fb.get("feature", ""),
+            "language": fb.get("language", "en"),
         })
-        print(f"Feedback saved for {fb.get('gmail')}")
+        print(f"Feedback from {email} synced")
 
-    print("JSON data synced to Google Sheets")
+    print("\n✅ End-to-end sync completed.")
 
 if __name__ == "__main__":
     sync_json_to_google_sheet()

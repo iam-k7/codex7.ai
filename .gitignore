@@ -1,105 +1,50 @@
-# --- Python ---
+# --- Python & Environment ---
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
+.env
+.venv/
+env/
+venv/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
 
-# --- Virtual Environments ---
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# --- Environment Variables & Secrets (CRITICAL) ---
-.env
-.env.local
-.env.production
-.env.test
-secrets.json
+# --- Secrets & Google API ---
 credentials.json
-key.json
+secrets.json
+*.key
+*.pem
 token.json
 client_secrets.json
 
-# --- AI & Large Files ---
-# Whisper/HuggingFace cache
-*.bin
-*.pt
-*.pth
-*.onnx
-*.safetensors
-models/
-.cache/
-hf_cache/
-
-# --- Node.js / Frontend ---
-node_modules/
-npm-debug.log
-yarn-error.log
-.next/
-out/
-build/
-dist/
-.DS_Store
-
-# --- Logs & Databases ---
-*.log
-logs/
-*.sqlite
-*.db
+# --- Local Databases & Data ---
 datastore/*.json
-# Exception: keep the example/empty db if needed, but usually we ignore actual data
+# Preserve directory but ignore data
 !datastore/.gitkeep
 !datastore/mock_db_template.json
 
-# --- Media & Output ---
-uploads/*
-!uploads/.gitkeep
+# --- Media & Runtime Artifacts ---
 temp_*
 *.mp4
 *.mp3
 *.wav
-*.avi
-*.mov
-*.mkv
 exports/
 render_output/
+uploads/*
+!uploads/.gitkeep
 
-# --- IDE & Editors ---
-.idea/
+# --- IDE & System ---
 .vscode/
+.idea/
+.DS_Store
+Thumbs.db
+ehthumbs.db
 *.swp
 *.swo
-.project
-.classpath
-.settings/
 
-# --- OS Specific ---
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# --- Logs ---
+*.log
+logs/

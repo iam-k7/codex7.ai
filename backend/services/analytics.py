@@ -10,8 +10,24 @@ from pathlib import Path
 class AnalyticsService:
     def __init__(self):
         self.scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        self.creds_path = os.getenv("GOOGLE_SHEETS_CREDS_PATH", "credentials.json")
-        self.sheet_id = os.getenv("GOOGLE_SHEETS_ID")
+        
+        # Robust credentials path finding
+        # 1. Env Var
+        # 2. Same dir (unlikely for services/)
+        # 3. Backend dir (../credentials.json)
+        self.creds_path = os.getenv("GOOGLE_SHEETS_CREDS_PATH")
+        if not self.creds_path:
+             # Try determining relative to this file
+             base_dir = Path(__file__).resolve().parent.parent # backend/
+             possible_path = base_dir / "credentials.json"
+             if possible_path.exists():
+                 self.creds_path = str(possible_path)
+             else:
+                 self.creds_path = "credentials.json" # Fallback to CWD
+
+        # Support both singular and plural env var naming
+        self.sheet_id = os.getenv("GOOGLE_SHEETS_ID") or os.getenv("GOOGLE_SHEET_ID")
+        
         self.client = None
         self.sheet = None
         
