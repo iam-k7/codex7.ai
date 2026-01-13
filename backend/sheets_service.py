@@ -30,7 +30,10 @@ class SheetsDB:
         ]
 
         # Use absolute path for credentials
-        self.creds_path = _backend_dir / "credentials.json"
+        self.creds_path = os.getenv(
+            "GOOGLE_SHEETS_CREDS_PATH",
+            "/etc/secrets/credentials.json"
+        )
 
         self.client = None
         self.spreadsheet = None
