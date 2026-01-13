@@ -1,4 +1,4 @@
-from sheets_service import SheetsDB
+from backend.sheets_service import SheetsDB
 import os
 
 print("-" * 50)

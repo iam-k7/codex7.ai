@@ -11,9 +11,9 @@ from pydantic import BaseModel
 import uvicorn
 
 # AI and Analytics Services
-from ai_service import generate_ai_captions, export_video_render
-from sheets_service import SheetsDB, JSONDB
-from services.analytics import analytics
+from backend.ai_service import generate_ai_captions, export_video_render
+from backend.sheets_service import SheetsDB, JSONDB
+from backend.services.analytics import analytics
 from fastapi.responses import FileResponse, StreamingResponse
 
 from fastapi import FastAPI

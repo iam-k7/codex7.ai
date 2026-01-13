@@ -1,4 +1,4 @@
-from sheets_service import SheetsDB, JSONDB
+from backend.sheets_service import SheetsDB, JSONDB
 
 def sync_json_to_google_sheet():
     """Manual trigger to sync local data to Google Sheets"""

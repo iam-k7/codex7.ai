@@ -1,5 +1,5 @@
 import os
-from services.transcription.whisper_v3 import transcription_service
+from backend.services.transcription.whisper_v3 import transcription_service
 
 async def generate_ai_captions(video_path: str, language: str = "en"):
     """
