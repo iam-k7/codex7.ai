@@ -103,12 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEditorPage = !!document.querySelector('.editor-body');
 
     if (isLoginPage && userEmail) {
-        window.location.href = '/editor';
+        window.location.href = '/editor.html';
         return;
     }
 
     if (isEditorPage && !userEmail) {
-        window.location.href = '/';
+        window.location.href = '/index.html';
         return;
     }
 
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logoutTrigger.addEventListener('click', () => {
                 if (confirm("Are you sure you want to logout?")) {
                     localStorage.clear();
-                    window.location.href = '/';
+                    window.location.href = '/index.html';
                 }
             });
         }
