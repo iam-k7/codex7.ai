@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logoutTrigger.addEventListener('click', () => {
                 if (confirm("Are you sure you want to logout?")) {
                     localStorage.clear();
-                    window.location.href = 'index.html';
+                    window.location.href = '/';
                 }
             });
         }
