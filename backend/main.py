@@ -16,6 +16,20 @@ from sheets_service import SheetsDB, JSONDB
 from services.analytics import analytics
 from fastapi.responses import FileResponse, StreamingResponse
 
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
+
+app = FastAPI()
+
+# Serve frontend
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
+@app.get("/")
+def read_root():
+    return FileResponse("frontend/index.html")
+
 # --- Environment Setup ---
 _backend_dir = Path(__file__).resolve().parent
 _env_path = _backend_dir / ".env"
