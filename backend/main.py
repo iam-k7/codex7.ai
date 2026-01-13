@@ -34,6 +34,11 @@ app.mount(
 def root():
     return FileResponse(FRONTEND_DIR / "index.html")
 
+
+@app.get("/editor")
+def editor():
+    return FileResponse(FRONTEND_DIR / "editor.html")
+
 # --- CORS ---
 app.add_middleware(
     CORSMiddleware,
