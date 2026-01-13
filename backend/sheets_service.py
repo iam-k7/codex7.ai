@@ -29,16 +29,17 @@ class SheetsDB:
             "https://www.googleapis.com/auth/drive",
         ]
 
-        creds_path = os.getenv(
-            "GOOGLE_SHEETS_CREDS_PATH",
-            "/etc/secrets/credentials.json"
+        self.creds_path = Path(
+            os.getenv(
+                "GOOGLE_SHEETS_CREDS_PATH",
+                "/etc/secrets/credentials.json"
+            )
         )
 
-        creds_path = Path(creds_path) 
-
-        if not creds_path.exists():
-            raise FileNotFoundError(f"Credentials not found at {creds_path}")
-
+        if not self.creds_path.exists():
+            raise FileNotFoundError(
+                f"Credentials not found at {self.creds_path}"
+            )
 
         self.client = None
         self.spreadsheet = None
