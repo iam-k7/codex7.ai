@@ -30,16 +30,8 @@ class SheetsDB:
         ]
 
         self.creds_path = Path(
-            os.getenv(
-                "GOOGLE_SHEETS_CREDS_PATH",
-                "/etc/secrets/credentials.json"
-            )
+            os.getenv("GOOGLE_SHEETS_CREDS_PATH", "/etc/secrets/credentials.json")
         )
-
-        if not self.creds_path.exists():
-            raise FileNotFoundError(
-                f"Credentials not found at {self.creds_path}"
-            )
 
         self.client = None
         self.spreadsheet = None
@@ -47,32 +39,35 @@ class SheetsDB:
         self.feedback_sheet = None
         self._connected = False
 
+        # ⚠️ DO NOT crash here
         self._connect()
 
     def _connect(self):
-        """Standardized connection logic with graceful fallback"""
         try:
             if not self.creds_path.exists():
-                raise FileNotFoundError(f"Credentials not found at {self.creds_path}")
+                print(f"⚠️ Google Sheets creds not found at {self.creds_path}")
+                return  # graceful fallback
 
             creds = ServiceAccountCredentials.from_json_keyfile_name(
                 str(self.creds_path), self.scope
             )
+
             self.client = gspread.authorize(creds)
 
             sheet_id = os.getenv("GOOGLE_SHEET_ID")
             if not sheet_id:
-                raise ValueError("GOOGLE_SHEET_ID not set in environment.")
+                print("⚠️ GOOGLE_SHEET_ID not set")
+                return
 
             self.spreadsheet = self.client.open_by_key(sheet_id)
             self._ensure_sheets_exist()
+
             self._connected = True
-            print(f"Connected to Google Sheets: {self.spreadsheet.title}")
-            
+            print(f"✅ Connected to Google Sheets: {self.spreadsheet.title}")
+
         except Exception as e:
             self._connected = False
-            print(f"Google Sheets connection failed: {e}")
-            print("Falling back to local storage only.")
+            print(f"❌ Google Sheets connection failed: {e}")
 
     def is_connected(self):
         return self._connected and self.spreadsheet is not None
