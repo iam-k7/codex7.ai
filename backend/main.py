@@ -42,7 +42,11 @@ def editor():
 # --- CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[    
+        "https://codex7-ai.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:5173"
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -115,7 +119,15 @@ async def generate(
     except Exception as e:
         if os.path.exists(temp_file):
             os.remove(temp_file)
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": str(e),
+                "type": e.__class__.__name__
+            }
+        )
 
 @app.get("/api/history")
 async def history(email: str):

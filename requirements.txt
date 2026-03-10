@@ -8,3 +8,5 @@ moviepy
 python-dotenv
 pandas
 static-ffmpeg
+groq
+httpx

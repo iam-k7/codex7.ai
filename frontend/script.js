@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE_URL =
         window.location.hostname === 'localhost'
             ? 'http://localhost:8000'
-            : '';
+            : import.meta.env.VITE_API_BASE_URL;
 
     initParticles();
 
@@ -103,18 +103,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEditorPage = !!document.querySelector('.editor-body');
 
     if (isLoginPage && userEmail) {
-        window.location.href = '/editor.html';
+        window.location.href = '/editor';
         return;
     }
 
     if (isEditorPage && !userEmail) {
-        window.location.href = '/index.html';
+        window.location.href = '/';
         return;
     }
 
     if (aiMessage) {
         const displayName = userNameSaved || 'Creator';
-        aiMessage.innerHTML = `Welcome to <strong>codex7.ai</strong> — Built by Kesavan<br>Hello, ${displayName}! Ready to make your video viral? 🚀`;
+        aiMessage.innerHTML = `Welcome to <strong>codex7.ai</strong><br>Hello, ${displayName}! Ready to make your video viral? 🚀`;
     }
 
     // --- User Profile & Dropdown ---
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logoutTrigger.addEventListener('click', () => {
                 if (confirm("Are you sure you want to logout?")) {
                     localStorage.clear();
-                    window.location.href = '/index.html';
+                    window.location.href = '/';
                 }
             });
         }
